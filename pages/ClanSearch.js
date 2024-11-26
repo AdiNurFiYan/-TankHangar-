@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -16,8 +16,24 @@ import { useNavigation } from "@react-navigation/native";
 
 const ClanSearch = () => {
   const [clans, setClans] = useState([]);
+  const [randomClans, setRandomClans] = useState([]);
   const [search, setSearch] = useState("");
   const navigation = useNavigation();
+
+  const fetchRandomClans = async () => {
+    try {
+      const response = await axios.get(
+        `https://api.wotblitz.asia/wotb/clans/list/?application_id=c2ea89d89b43f8ce20c935966c349fbb`
+      );
+
+      if (response.data?.data?.length > 0) {
+        const shuffledClans = response.data.data.sort(() => 0.5 - Math.random());
+        setRandomClans(shuffledClans.slice(0, 10));
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to fetch random clans. Please try again.");
+    }
+  };
 
   const fetchClans = async (name) => {
     try {
@@ -46,14 +62,13 @@ const ClanSearch = () => {
 
   const navigateToDetailClan = (clan) => {
     navigation.navigate("Home", {
-      screen: "DetailClan", 
+      screen: "DetailClan",
       params: {
         clanId: clan.clan_id,
         clanName: clan.name,
       },
     });
   };
-  
 
   const renderClanCard = ({ item }) => (
     <TouchableOpacity
@@ -73,6 +88,10 @@ const ClanSearch = () => {
     </TouchableOpacity>
   );
 
+  useEffect(() => {
+    fetchRandomClans();
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <Header headerText={"Clan Search"} />
@@ -86,7 +105,7 @@ const ClanSearch = () => {
       />
 
       <FlatList
-        data={clans}
+        data={search.length > 2 ? clans : randomClans}
         renderItem={renderClanCard}
         keyExtractor={(item) => item.clan_id.toString()}
         contentContainerStyle={styles.listContainer}
